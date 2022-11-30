@@ -33,7 +33,7 @@ if(!siteid %in% phe.cache$siteID)
 phe <- phe.cache[phe.cache$siteID==siteid,]
 
 ## Create table per species, per date
-phe.spp <- unique(phe[,c("date", "taxonID", "scientificName", "taxonRank", "growthForm")])
+phe.spp <- unique(phe[,c("date", "dayOfYear", "taxonID", "scientificName", "taxonRank", "growthForm")])
 
 
 phephases <- unique(phe$phenophaseName)
@@ -42,13 +42,17 @@ phephases <- unique(phe$phenophaseName)
 for(phephase in phephases)
   phe.spp[,phephase] <- NA
 
+# phe.spp$year <- NA
+
+phe.spp$year <- substr(phe.spp$date, 0, 4)
 
 ## Tally 'yes' status per species, per date
-
 # Develop 'apply' method if time; this method is time consuming
 writeLines(c("", "Tallying per-date status. Processing may take up to 30 seconds..."))
 
 for(i in 1:nrow(phe.spp)){
+  
+  # phe.spp$year[i] <- substr(phe.spp$date, 0, 4)
   
   phe.i <- phe[phe$taxonID == phe.spp$taxonID[i]
                & phe$date == phe.spp$date[i],]
@@ -60,5 +64,14 @@ for(i in 1:nrow(phe.spp)){
             & phe.i$phenophaseStatus == "yes",]
     )
   }
-  
 }
+
+
+## Plot n = "yes" per phenophase, faceted per species, colored by year
+df <- phe.spp
+
+p <- ggplot(df, aes(x = dayOfYear, y = df[,"Breaking leaf buds"])) + # , group=year
+  geom_line(aes(color=year), alpha=0.5) +
+  facet_wrap(~ taxonID)
+
+print(p)
