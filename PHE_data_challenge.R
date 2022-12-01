@@ -43,6 +43,8 @@ phephases <- unique(phe$phenophaseName)
 for(phephase in phephases)
   phe.spp[,phephase] <- NA
 
+rm(phephase)
+
 # Observation year
 phe.spp$year <- substr(phe.spp$date, 0, 4)
 
@@ -64,15 +66,27 @@ for(i in 1:nrow(phe.spp)){
   }
 }
 
+rm(phephase)
 
 ## Plot n = "yes" per phenophase, faceted per species, colored by year
-df <- phe.spp
 
-p <- ggplot(df, aes(x = dayOfYear, y = df[,"Breaking leaf buds"])) +
-  geom_line(aes(color = year), alpha = 0.5, size = 1) +
-  facet_wrap(~ taxonID)
+plot_phenoPhase <- function(siteid, df, phephase){
 
-print(p)
+  df <- df[!is.na(df[,phephase]),]
+  
+  title.plot <- paste0(phephase, ", ", siteid, ", ", min(df$year), " to ", max(df$year))
+  
+  p <- ggplot(df, aes(x = dayOfYear, y = df[,phephase])) +
+    geom_line(aes(color = year), alpha = 0.5, size = 1) +
+    facet_wrap(~ taxonID) +
+    labs(title = title.plot, x = "Day of Year", y = phephase)
+  
+  print(p)
+  
+}
+
+for(phephase in phephases)
+  plot_phenoPhase(siteid = siteid, df = phe.spp, phephase = phephase)
 
 # pl <- ggplotly(p)
 # print(pl)
