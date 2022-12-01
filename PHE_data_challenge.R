@@ -1,11 +1,9 @@
-# rm(list=ls()) # Clear variables
-graphics.off() # Close figures
-
-
-library(neonUtilities)
-library(ggplot2)
-# library(plotly)
-
+# Data challenge
+# Plant Phenology - Time series plots: n status = 'yes' per phenophase
+# All years plotted simultaneously for direct comparison
+# One plot (faceted by species) generated for each extant phenophase in site data
+# SiteID input required
+# Greg Chapman, 20221201
 
 
 ### Inputs
@@ -13,9 +11,15 @@ library(ggplot2)
 siteid <- "SCBI"
 clear.cache <- F # TRUE to re-download PHE data for sites already loaded
 
+### end Inputs
 
 
 
+
+graphics.off() # Close figures
+
+library(neonUtilities)
+library(ggplot2)
 
 # Import functions (h/t Clockwork)
 functions <- list.files(file.path('functions'), pattern = "*.R$", full.names = T, ignore.case = T)
@@ -28,7 +32,10 @@ invisible(sapply(functions, source, .GlobalEnv))
 if(!exists("phe.cache") | clear.cache)
   phe.cache <- data.frame()
 if(!siteid %in% phe.cache$siteID)
-  phe.cache <- rbind(getPortal_PHE_status(siteid), phe.cache)
+  phe.cache <- rbind(
+    getPortal_PHE_status(siteid), # Custom function (see 'functions' directory)
+    phe.cache
+  ) 
 
 ## All phe obs data
 phe <- phe.cache[phe.cache$siteID==siteid,]
@@ -42,8 +49,6 @@ phephases <- unique(phe$phenophaseName)
 # Initialize columns per extant phenophase
 for(phephase in phephases)
   phe.spp[,phephase] <- NA
-
-rm(phephase)
 
 # Observation year
 phe.spp$year <- substr(phe.spp$date, 0, 4)
@@ -66,27 +71,5 @@ for(i in 1:nrow(phe.spp)){
   }
 }
 
-rm(phephase)
-
-## Plot n = "yes" per phenophase, faceted per species, colored by year
-
-plot_phenoPhase <- function(siteid, df, phephase){
-
-  df <- df[!is.na(df[,phephase]),]
-  
-  title.plot <- paste0(phephase, ", ", siteid, ", ", min(df$year), " to ", max(df$year))
-  
-  p <- ggplot(df, aes(x = dayOfYear, y = df[,phephase])) +
-    geom_line(aes(color = year), alpha = 0.5, size = 1) +
-    facet_wrap(~ taxonID) +
-    labs(title = title.plot, x = "Day of Year", y = phephase)
-  
-  print(p)
-  
-}
-
 for(phephase in phephases)
-  plot_phenoPhase(siteid = siteid, df = phe.spp, phephase = phephase)
-
-# pl <- ggplotly(p)
-# print(pl)
+  plot_phenoPhase(siteid = siteid, df = phe.spp, phephase = phephase) # Custom function (see 'functions' directory)
